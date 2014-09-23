@@ -1,8 +1,10 @@
+include ../makefile.inc
+
 CC=mpic++
 
 CFLAGS=-w
 
-INC = -I./../lib/libcommon -I./../ -I/home/jmcclain/eigenfolder/eigen3 #-I/usr/local/include/eigen3
+INC = -I./../lib/libcommon -I./../ -I${EIGENDIR} #-I/usr/local/include/eigen3
 
 LIB = \
 -L./../lib/libcommon \

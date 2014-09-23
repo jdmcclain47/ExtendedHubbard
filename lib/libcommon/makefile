@@ -1,9 +1,11 @@
+include ../../makefile.inc
+
 CC=g++
 
 CFLAGS=-w
 
 #INC = -I/usr/local/include/eigen3
-INC = -I/home/jmcclain/eigenfolder/eigen3
+INC = -I${EIGENDIR}
 
 LIB = \
 -L/usr/lib \
