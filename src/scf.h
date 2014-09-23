@@ -82,6 +82,7 @@ class SCF {
       bool ws_cut, ws_cut_correction, use_ws;
       bool converge_pseudo_1d;
       bool converge_pseudo_2d;
+      bool enforce_charge_sym;
       bool sph_cut, sph_cut_correction;
       bool readin_density, readin_mo, read_density_diagonal;
       bool do_gamma, do_kpoint;
@@ -141,6 +142,7 @@ class SCF {
       void Create_Gamma_MatrixXd( UnitCell& UCell, SuperCell& SCell, VMatrixXd& block_matrix, VMatrixXd& gamma_matrix );
       void Create_Block_MatrixXd( UnitCell& UCell, SuperCell& SCell, VMatrixXd& block_matrix, VMatrixXd& gamma_matrix );
       void Create_Block_MatrixXd( UnitCell& UCell, SuperCell& SCell, VMatrixXd& block_matrix, Eigen::MatrixXd& gamma_matrix );
+      void Enforce_Inversion_Symmetry( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory& aoints, VMatrixXd& block_matrix );
       void build_dens_k( UnitCell& UCell, SuperCell& SCell );
       void build_dens_gamma( UnitCell& UCell, SuperCell& SCell );
       void FT_dens_k_to_real( UnitCell& UCell, SuperCell& SCell );

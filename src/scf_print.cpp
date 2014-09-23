@@ -28,7 +28,7 @@ void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
           if( i == offset )
             printf( "%-4c", ' ' );
           else
-            printf( "%14d", i );
+            printf( "%20d", i );
         } 
         printf( "\n" );
         fflush( stdout );
@@ -45,7 +45,7 @@ void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
           if( i == offset )
             printf( "%-4d", current_row ); 
           else
-            printf( "%14.10f", in_matr.irrep( which_irrep )( (current_row-1), (which_j) ) );
+            printf( "%20.16f", in_matr.irrep( which_irrep )( (current_row-1), (which_j) ) );
           fflush( stdout );
         }
         current_row++;

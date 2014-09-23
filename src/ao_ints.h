@@ -100,6 +100,7 @@ class aoIntegralFactory {
       void Init( UnitCell& UCell, SuperCell& SCell, const char* ao_options_filename, const char* ppp_options_filename );
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title );
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title, int width, int prec );
+      int getInvTrans( int which_cell );
  
       double getCoulombInt( int iat, int jat, int which_cell );
       double getXCInt( int iat, int jat, int which_cell );

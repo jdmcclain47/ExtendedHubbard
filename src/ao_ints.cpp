@@ -85,6 +85,11 @@ int aoIntegralFactory::getPerElement( int iao, int jao, int which_cell ){
     return index; 
 }
 
+int aoIntegralFactory::getInvTrans( int which_cell ){
+    int index = inversion.invij[ which_cell ];
+    return index;
+}
+
 void aoIntegralFactory::printPerSuperMatrix( 
     SuperCell& SCell, 
     std::vector< double >& inmatr, 
