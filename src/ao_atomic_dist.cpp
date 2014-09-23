@@ -86,8 +86,18 @@ void aoIntegralFactory::makeDistMatr(
                 }
                 if( smallerfound ) distances_changed++;
            }
+         // we treat the j == i and j != i cases separately since some floating point errors seem to arise
 
+         if( j != i ){
          aoDistMatr[ getPerElement( i, j, itrans ) ] = dist;
+         }else{
+           if( i > 0 ){
+             aoDistMatr[ getPerElement( i, j, itrans ) ] = aoDistMatr[ getPerElement( 0, 0, itrans ) ];
+           }
+           else{
+             aoDistMatr[ getPerElement( i, j, itrans ) ] = dist;
+           }
+         }
          //printf( "%20.16f  iat %3d  jat %3d  trans %3d    INDEX : %3d \n", dist, i, j, itrans, getPerElement( i, j, itrans ) );
 //           aoDistMatr( i, j ) = dist;
 //           aoDistMatr( j, i ) = dist;

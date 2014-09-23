@@ -24,7 +24,15 @@ void aoIntegralFactory::makeEwaldMatr(
       coordj = SCell.translations[ itrans ] + UCell.coords[ j ];
       index = getPerElement( i, j, itrans );
       //aoEwaldMatr[ index ] = potential_ewald_converge( UCell.coords[ i ], SCell.T, SCell.K, coordj, charge, tolEwald );
-      aoEwaldMatr[ index ] = potential_ewald_converge_FAST( UCell.coords[ i ], SCell.T, SCell.K, coordj, charge, tolEwald );
+      if( i != j ){
+        aoEwaldMatr[ index ] = potential_ewald_converge_FAST( UCell.coords[ i ], SCell.T, SCell.K, coordj, charge, tolEwald );
+      }else{
+        if( i > 0 ){
+          aoEwaldMatr[ index ] = aoEwaldMatr[ getPerElement( 0, 0, itrans ) ]; 
+        }else{
+          aoEwaldMatr[ index ] = potential_ewald_converge_FAST( UCell.coords[ i ], SCell.T, SCell.K, coordj, charge, tolEwald );
+        }
+      }
     } 
   }
   }

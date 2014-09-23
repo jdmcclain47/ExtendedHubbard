@@ -114,7 +114,7 @@ void aoIntegralFactory::printPerSuperMatrix(
         Eigen::Vector3i tvec = SCell.reduced_t[ jtrans ] - SCell.reduced_t[ itrans ];
         int index = SCell.get_supercell_index( tvec( 0 ), tvec( 1 ), tvec( 2 ), &found );
         printf( "%*.*f ", width, precision, inmatr[ getPerElement( i, j, index ) ] );
-        //printf( "ATOM_I:%3d   R_I:(%3d,%3d,%3d)  ATOM_J:%3d   R_J:(%3d,%3d,%3d)   R_J-R_I(INDEX=%3d):(%3d,%3d,%3d)   DIST:%12.8f \n",
+        //printf( "ATOM_I:%3d   R_I:(%3d,%3d,%3d)  ATOM_J:%3d   R_J:(%3d,%3d,%3d)   R_J-R_I(INDEX=%3d):(%3d,%3d,%3d)   DIST:%20.16f \n",
         //        i,SCell.reduced_t[itrans](0),SCell.reduced_t[itrans](1),SCell.reduced_t[itrans](2),
         //        j,SCell.reduced_t[jtrans](0),SCell.reduced_t[jtrans](1),SCell.reduced_t[jtrans](2),
         //        index,SCell.reduced_t[index](0),SCell.reduced_t[index](1),SCell.reduced_t[index](2),
