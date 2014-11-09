@@ -3,7 +3,6 @@
 #include <iomanip>
 #include "parser.h"
 #include "ao_ints.h"
-#include "davidson_new.h"
 #include "mp2.h"
 #include "cellinfo.h"
 #include "create_header.h"
@@ -37,9 +36,6 @@ int main( int argc, char* argv[] ){
    aoIntegralFactory   aoints;
    SCF                 scf;
    Davidson            cis;
-   moIntegralFactory moints;
-
-   
 
    if( taskid == 0 ){
     
@@ -48,14 +44,11 @@ int main( int argc, char* argv[] ){
      aoints.Init( UCell, SCell, "PARAM", "PARAM" );
     
      scf.Compute_Energy( UCell, SCell, aoints );
-
-     //aoints.set_non_coulomb_kernel_to_zero();
-
+     cis.Init( UCell, SCell );
    }
 
    if( ( scf.get_pbc() ).type == KPOINT ){
      if( taskid == 0 ){
-       cis.Init( UCell, SCell, moints );
        moint_driver_k kmoints;
        kmoints.kpoint_init( UCell, SCell, aoints, scf.get_evals(), scf.get_kpoint_evecs() );
        std::vector< std::complex< double > > kintegrals = kmoints.create_kpoint_2e_ints_fast_FULL( UCell, SCell, aoints, scf.get_kpoint_evecs() );
@@ -66,19 +59,16 @@ int main( int argc, char* argv[] ){
        cis.DavidsonCIS_kpoint( 30000, -6 );
      }
    } else {
-     clock_t t;
-     if( taskid == 0 ){
+     moIntegralFactory moints;
+     if( taskid == 0 )
        moints.Init( UCell, SCell, aoints, scf.get_pbc(), scf.get_evals(), scf.get_gamma_evecs(), scf.get_kpoint_evecs() );
-       t=clock();
-       moints.write_gamma_moint_to_fcidump( "FCIDUMP", -10 );
-       t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
-     }
+     clock_t t;
+
      std::string mointfile ( ".MOINTEGRALS" );
 
 
 
      double mp2energy;
-     cis.Init( UCell, SCell, moints );
 
      //
      //
@@ -86,24 +76,19 @@ int main( int argc, char* argv[] ){
      //
      //
 
-     //if( taskid == 0 ){
-     //  t=clock();
-     //  moints.write_gamma_moint_to_file( ".MOINTS" );
-     //  t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
+     //t=clock();
+     //moints.write_gamma_moint_to_file( ".MOINTS" );
+     //t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
 
-     //  std::vector< double > allints = moints.read_gamma_moints_from_file( ".MOINTS" );
-     //  //moints.check_gamma_exchange_energy( allints, scf.get_xc_energy() );
-     //  //mp2energy = mp2_gamma_full_moints( UCell, SCell, scf.get_evals(), allints );
-     //  //printf( "MP2 ENERGY          : %20.16f \n", mp2energy );
-     //  //printf( "MP2 ENERGY D KPOINT : %20.16f \n", mp2energy / SCell.nkpt );
-     //  cis.set_evals_and_moints( scf.get_evals(), allints );
-     //  cis.DavidsonCIS( 3000, 4, 10, mointfile );
-     //}
-     //cis.CheckerCIS();
-//Davidson_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 4, 10 );
-MP2_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 10 );
-MPI_Finalize();
-return;
+     //std::vector< double > allints = moints.read_gamma_moints_from_file( ".MOINTS" );
+     //moints.check_gamma_exchange_energy( allints, scf.get_xc_energy() );
+     //mp2energy = mp2_gamma_full_moints( UCell, SCell, scf.get_evals(), allints );
+     //printf( "MP2 ENERGY          : %20.16f \n", mp2energy );
+     //printf( "MP2 ENERGY D KPOINT : %20.16f \n", mp2energy / SCell.nkpt );
+     //cis.set_evals_and_moints( scf.get_evals(), allints );
+     ////cis.CheckerCIS();
+     ////cis.set_evals( scf.get_evals() );
+     //cis.DavidsonCIS( 3000, 1, 10, mointfile );
 
      //
      //
@@ -123,8 +108,8 @@ return;
      //  printf( "MP2 EN / NKPT : %20.16f \n", mp2energy / SCell.nkpt );
      //  printf( "MP2 TIME      : %20.16f \n", mp2timer / (double)CLOCKS_PER_SEC );
      //}
-     //cis.set_evals( scf.get_evals() );
-     //cis.DavidsonCIS( 3000, 1, 10, mointfile );
+     ////cis.set_evals( scf.get_evals() );
+     ////cis.DavidsonCIS( 3000, 1, 10, mointfile );
      //mp2energy = mp2_gamma_ind_p( UCell, SCell, scf.get_evals(), mointfile, true, moints );
      //printf( "MP2 ENERGY  : %20.16f \n", mp2energy );
      //printf( "MP2 ENERGY D KPOINT : %20.16f \n", mp2energy / SCell.nkpt );
@@ -137,7 +122,7 @@ return;
      //
      if( taskid == 0 ){
        t=clock();
-       moints.write_gamma_moint_to_fcidump_binary( "FCIDUMP_BINARY", -10 );
+       moints.write_gamma_moint_to_fcidump( "FCIDUMP", -10 );
        t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
      }
    }

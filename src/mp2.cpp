@@ -81,8 +81,8 @@ double mp2_gamma_ind_p(
   tag5 = 5;
   double mp2en = 0.0;
   double total_mp2en = 0.0;
-  int nocc, norb;
   std::vector< double > eigenvals;
+  int nocc, norb;
   Eigen::MatrixXd kernel_matr;
   Eigen::MatrixXd evecsXd;
   std::vector< double > kernel_matr_data;
@@ -106,6 +106,10 @@ double mp2_gamma_ind_p(
       MPI_Send( evecsXd.data(), norb*norb, MPI_DOUBLE, dest, tag5, MPI_COMM_WORLD );
       cout << "DONE : SENDING DATA TO TASK " << taskid << endl;
     }
+    //cout << taskid << " KERNEL MATRIX : " << endl;
+    //cout << kernel_matr.block( 0, 0, 3, 3 ) << endl;
+    //cout << taskid << " EVECS MATRIX  : " << endl;
+    //cout << evecsXd.block( 0, 0, 3, 3 ) << endl;
   }
   if( taskid > 0 ){
     for( int dest = 1; dest < numtasks; ++dest ){

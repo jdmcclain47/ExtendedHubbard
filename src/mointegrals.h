@@ -58,17 +58,8 @@ class moIntegralFactory {
                                   int pstart, int pend, int qstart, int qend, int rstart, int rend, int tstart, int tend, int itol );
       void write_gamma_moint_to_file( const char* ofilename );
       void write_gamma_moint_to_fcidump( const char* ofilename, int tol );
-      void write_gamma_moint_to_fcidump_binary( const char* ofilename, int tol );
       void write_gamma_mointb_ind_p( 
           std::string ofilename,
-          int tol
-      );
-      void vec_gamma_mointb_ind_p( 
-          const int& p1,
-          const int& p2,
-          std::vector< double >& dble_arr,
-          std::vector< size_t >& indx_arr,
-          size_t& size_arr,
           int tol
       );
       std::vector< double > read_gamma_moints_from_file( const char* ifilename );

@@ -21,9 +21,6 @@ void aoIntegralFactory::makeNonCoulombMatr(
   int nx, ny, nz;
   Eigen::Matrix3d tempTmat = SCell.T;
   findBoundingSphere( tempTmat, rcut, nx, ny, nz );
-  nx++;
-  ny++;
-  nz++;
   printf( "MAKING CORRECTION TO COULOMB OPERATOR...\n" );
   printf( "  - correcting operator up to a distance : %20.16f \n", rcut );
   printf( "  - search space for trans. vectors      : (%3d,%3d,%3d) \n", nx, ny, nz );

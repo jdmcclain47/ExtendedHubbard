@@ -22,7 +22,7 @@ void aoIntegralFactory::makeCutMatrWS(
       if( i == j && itrans == 0 ) // then we are on the same site, and so don't add anything
         aoCutMatrWS[ index ] = 0.0; 
       else
-        aoCutMatrWS[ index ] = 1./aoDistMatr[index]; //getPPPInt( UCell.ElementStr[ i ], UCell.ElementStr[ j ], aoDistMatr[ index ] );
+        aoCutMatrWS[ index ] = getPPPInt( UCell.ElementStr[ i ], UCell.ElementStr[ j ], aoDistMatr[ index ] );
       //printf( "ELEMENT_I: %3s  ELEMENT_J: %3s  DISTANCE: %12.8f  VALUE: %12.8f \n", UCell.ElementStr[ i ].c_str(), 
       //        UCell.ElementStr[ j ].c_str(), aoDistMatr[ index ], aoCutMatrWS[ index ] );
     } 

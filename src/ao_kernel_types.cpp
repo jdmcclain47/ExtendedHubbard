@@ -92,13 +92,6 @@ void aoIntegralFactory::SetCoulombKernel( const char* inkern ){
   setKernel( coulombkern, inkern );
 }
 
-void aoIntegralFactory::SetCorr1Kernel( const char* inkern ){
-  setKernel( corr1kern, inkern );
-}
-void aoIntegralFactory::SetCorr2Kernel( const char* inkern ){
-  setKernel( corr2kern, inkern );
-}
-
 std::string aoIntegralFactory::getKernelStr( const kernel& inkern ){
   std::string wskern( "WS" );
   std::string ewaldkern( "EWALD" );
@@ -154,32 +147,6 @@ double aoIntegralFactory::getCoulombInt( int iat, int jat, int which_cell ){
   if( coulombkern == EWALD ) return (prefac*( aoEwaldMatr[ inversion_index ] + val ));
   if( coulombkern == EWALDMSE ) return (prefac*( aoEwaldMatr[ inversion_index ] - ewald_self + val ));
   if( coulombkern == NONE ) return 0.0;
-  printf( "ERROR : getCoulombInt not set up for xckern = %d (see aoints.h for the details of the enumerated kernel type) \n", xckern );
-  exit( EXIT_FAILURE );
-}
-
-double aoIntegralFactory::getCorr1Int( int iat, int jat, int which_cell ){
-  assert( iat < naoUnitCell && jat < naoUnitCell && "iat and jat must be in the unit cell!" );
-  int inversion_index = getPerElement( iat, jat, which_cell );
-  double val = 0.0;
-  if( do_xc_ppp_correction ) val = aoNonCoulombMatr[ inversion_index ];
-  if( corr1kern == WS ) return (prefac*( aoCutMatrWS[ inversion_index ] + val ) );
-  if( corr1kern == EWALD ) return (prefac*( aoEwaldMatr[ inversion_index ] + val ));
-  if( corr1kern == EWALDMSE ) return (prefac*( aoEwaldMatr[ inversion_index ] - ewald_self + val ));
-  if( corr1kern == NONE ) return 0.0;
-  printf( "ERROR : getCorr1Int not set up for xckern = %d (see aoints.h for the details of the enumerated kernel type) \n", xckern );
-  exit( EXIT_FAILURE );
-}
-
-double aoIntegralFactory::getCorr2Int( int iat, int jat, int which_cell ){
-  assert( iat < naoUnitCell && jat < naoUnitCell && "iat and jat must be in the unit cell!" );
-  int inversion_index = getPerElement( iat, jat, which_cell );
-  double val = 0.0;
-  if( do_xc_ppp_correction ) val = aoNonCoulombMatr[ inversion_index ];
-  if( corr2kern == WS ) return (prefac*( aoCutMatrWS[ inversion_index ] + val ) );
-  if( corr2kern == EWALD ) return (prefac*( aoEwaldMatr[ inversion_index ] + val ));
-  if( corr2kern == EWALDMSE ) return (prefac*( aoEwaldMatr[ inversion_index ] - ewald_self + val ));
-  if( corr2kern == NONE ) return 0.0;
   printf( "ERROR : getCoulombInt not set up for xckern = %d (see aoints.h for the details of the enumerated kernel type) \n", xckern );
   exit( EXIT_FAILURE );
 }

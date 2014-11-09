@@ -104,7 +104,7 @@ void SCF::SCF_Iteration( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory& a
       if( pbc.ret_type() == GAMMA ){
          old_evals.irrep(0) = e_vals.irrep(0);
          // need to create SCell_FockXd; by filling it in with the FockXd's
-         if ( scf_iter > 0 && use_diis && densdif < 0.10 ){
+         if ( scf_iter > 0 && use_diis && densdif < 0.05 ){
             MatrixXd fock_with_diis = MatrixXd::Zero( nmo_scell, nmo_scell ) ;
             DIIS.use_diis( &fock_with_diis, SCell_FockXd.irrep(0), SCell_DensXd.irrep(0) );
             SelfAdjointEigenSolver<MatrixXd> eigensolver( fock_with_diis );

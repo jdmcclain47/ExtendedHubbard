@@ -39,17 +39,12 @@ int get_ijkl( int i, int j, int k, int l ){
 
 void Davidson::Init(
     UnitCell& inUCell,
-    SuperCell& inSCell,
-    moIntegralFactory& incMOints
+    SuperCell& inSCell
 ){
    cout << "initializing davidson..." << flush;
    full_moint_set = false;
    UCell = inUCell;
-   cout << "  o UCELL SET!" << endl;
    SCell = inSCell;
-   cout << "  o SCELL SET!" << endl;
-   cMOints = incMOints;
-   cout << "  o MOINT SET!" << endl;
    cout << "done." << endl;
 }
 
