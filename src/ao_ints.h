@@ -101,10 +101,7 @@ class aoIntegralFactory {
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title );
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title, int width, int prec );
       int getInvTrans( int which_cell );
-<<<<<<< HEAD
       void set_non_coulomb_kernel_to_zero(){ for( int i = 0; i < aoNonCoulombMatr.size(); ++i ){ aoNonCoulombMatr[ i ] = 0.0;} };
-=======
->>>>>>> b62e51e60e0c407ea9afd96b9ffe9dc4a09a3f13
  
       double getCoulombInt( int iat, int jat, int which_cell );
       double getXCInt( int iat, int jat, int which_cell );
