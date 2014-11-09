@@ -10,12 +10,21 @@
 #include <time.h>
 #include "binary_search.h"
 #include "moint_read_file.h"
+#include "mointegrals.h"
 #include "common.h"
+#include "sorter.h"
 #include "cellinfo.h"
 
 using namespace std;
 using namespace Eigen;
 
+static size_t get_ijkl( int i, int j, int k, int l ){
+    size_t pq, rs, index;
+    pq = ( i > j ) ? (i*(i+1))/2+j : (j*(j+1))/2+i;
+    rs = ( k > l ) ? (k*(k+1))/2+l : (l*(l+1))/2+k;
+    index = ( pq > rs ) ? (pq*(pq+1))/2+rs : (rs*(rs+1))/2+pq; 
+    return index;
+}
 
 void Davidson::DavidsonCIS(
     int sub_size,
@@ -26,32 +35,38 @@ void Davidson::DavidsonCIS(
 
   /* Setting everything up for MOINTEGRALS */
 
+  dble_arr.resize( 1000000 );
+  indx_arr.resize( 1000000 );
+  dble_arr2.resize( 1000000 );
+  indx_arr2.resize( 1000000 );
   opt_size_arr = 0;
   optimize_size_arr = true;
-  if( !full_moint_set ){
-     std::cout << "READING FROM MULTIPLE MOINT FILES" << std::endl;
-     for( int i = 0; i < SCell.nao; ++i ){
-       read_gamma_mointb_ind_p( mointfile, i, dble_arr, indx_arr, size_arr, optimize_size_arr );
-       if( size_arr > opt_size_arr ) opt_size_arr = size_arr;
-     }
-     std::cout << "OPTIMAL SIZE OF ARRAYS " << opt_size_arr << std::endl;
-     optimize_size_arr = false;
-     dble_arr.resize( opt_size_arr );
-     indx_arr.resize( opt_size_arr );
+//  if( !full_moint_set ){
+//     std::cout << "READING FROM MULTIPLE MOINT FILES" << std::endl;
+//     for( int i = 0; i < SCell.nao; ++i ){
+//       read_gamma_mointb_ind_p( mointfile, i, dble_arr, indx_arr, size_arr, optimize_size_arr );
+//       if( size_arr > opt_size_arr ) opt_size_arr = size_arr;
+//     }
+//     std::cout << "OPTIMAL SIZE OF ARRAYS " << opt_size_arr << std::endl;
+//     optimize_size_arr = false;
+//     dble_arr.resize( opt_size_arr );
+//     indx_arr.resize( opt_size_arr );
+//
+//     dble_arr2.resize( opt_size_arr );
+//     indx_arr2.resize( opt_size_arr );
+///*
+//     for( int i = 0; i < moints.get_nmo_scell(); ++i ){
+//       read_gamma_mointb_ind_p( mointfile, i, dble_arr, indx_arr, size_arr, optimize_size_arr );
+//       int INDEX_TO_BE_FOUND = 1673535;
+//       int mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
+//       if( mo_index_in_arr >= 0 ) std::cout << "MOINTEGRAL " << INDEX_TO_BE_FOUND << " = " << dble_arr[ mo_index_in_arr ] << std::endl;
+//     }
+//*/
+//  }
 
-     dble_arr2.resize( opt_size_arr );
-     indx_arr2.resize( opt_size_arr );
-/*
-     for( int i = 0; i < moints.get_nmo_scell(); ++i ){
-       read_gamma_mointb_ind_p( mointfile, i, dble_arr, indx_arr, size_arr, optimize_size_arr );
-       int INDEX_TO_BE_FOUND = 1673535;
-       int mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
-       if( mo_index_in_arr >= 0 ) std::cout << "MOINTEGRAL " << INDEX_TO_BE_FOUND << " = " << dble_arr[ mo_index_in_arr ] << std::endl;
-     }
-*/
-  }
-
-
+  nocc = (int)(SCell.nao/2);
+  norb = SCell.nao;
+  cidim = nocc * nocc;
 
    tol = pow( 10., -1. * tol_ );
 
@@ -59,8 +74,7 @@ void Davidson::DavidsonCIS(
    int pq, rs, index1, index2;
    double cival;
    int numberOfEvals = numberOfEvals_;
-   nocc = (int)(SCell.nao/2);
-   cidim = nocc * nocc;
+   int index_ci;
 
    //For more than one eigenvalue, it more just checks that the other eigenvalues are
    //   eigenvalues, rather than "lowest" eigenvalues.  Might need to change which
@@ -89,10 +103,21 @@ void Davidson::DavidsonCIS(
    lower_bound1 = 0;
    lower_bound2 = 0;
 
+//void moIntegralFactory::vec_gamma_mointb_ind_p( 
+//    const int& p1,
+//    const int& p2,
+//    std::vector< double >& dble_arr,
+//    std::vector< size_t >& indx_arr,
+//    size_t& size_arr,
+//    int tol
+//){
 
-   for( int i = 0; i < cidim; i++ ){
-      psia = i - (int)(i / nocc) * nocc;
-      psir = ( i / nocc ) + nocc;
+   for( int psir = nocc; psir < norb; psir++ ){
+   for( int psia = 0; psia < nocc; psia++ ){
+//
+//   for( int i = 0; i < cidim; i++ ){
+//      psia = i - (int)(i / nocc) * nocc;
+//      psir = ( i / nocc ) + nocc;
       psib = psia;
       psis = psir;
 
@@ -113,44 +138,46 @@ void Davidson::DavidsonCIS(
         cival += 2. * moints[ index1 ] - 1. * moints[ index2 ];
       }else{
         if( old_psir != psir ){
-          read_gamma_mointb_ind_p( mointfile, psir, dble_arr, indx_arr, size_arr, optimize_size_arr );
-          lower_bound1 = 0;
-          lower_bound2 = 0;
+          int psirp1 = psir+1;
+          cMOints.vec_gamma_mointb_ind_p( psir, psirp1, dble_arr, indx_arr, size_arr, -10 );
         }
 
         moint1 = 0.0;
         INDEX_TO_BE_FOUND = index1;
-        mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, lower_bound1, size_arr-1 );
+        mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
         if( mo_index_in_arr >= 0 ){
           moint1 = dble_arr[ mo_index_in_arr ];
           lower_bound1 = mo_index_in_arr;
         }
-
-
         moint2 = 0.0;
         INDEX_TO_BE_FOUND = index2;
-        mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, lower_bound2, size_arr-1 );
+        mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
         if( mo_index_in_arr >= 0 ){
           moint2 = dble_arr[ mo_index_in_arr ];
-          lower_bound2 = mo_index_in_arr;
+          lower_bound1 = mo_index_in_arr;
         }
-
         cival += 2. * moint1 - 1. * moint2;
         
         old_psir = psir;
       }
+
+      index_ci = (psir-nocc) * nocc + psia;
       
-      Hdiag(i) = cival;
-      Hdiag(i) = 0.0;
+      Hdiag( index_ci ) = cival;
+      Hdiag( index_ci ) = 0.0;
    }
+   }
+   //cout << "HDIAGONAL " << endl;
+   //cout << Hdiag << endl;
+   //cout << "--------------------" << endl;
+
    t = clock() - t;
    std::cout << " - done in " << t / (double)CLOCKS_PER_SEC << " seconds." << std::endl;
    int cdim = cidim;
    int CurrentSize;
 
-
    vector<VectorXd> r_evecs;
-   VectorXd tempvec = VectorXd::Random(cdim);
+   VectorXd tempvec = VectorXd::Ones(cdim);
    r_evecs.push_back(tempvec);
    CurrentSize = 1;
 
@@ -174,12 +201,20 @@ void Davidson::DavidsonCIS(
       if(i==0){
          r_evecs[0]=r_evecs[0].normalized();
          Ar_evecs.push_back(Fill_Hrvec(r_evecs[0], mointfile));
+         //cout << "R VEC " << endl;
+         //cout << r_evecs[ i ].transpose() << endl;
+         //cout << "FIRST HR VEC " << endl;
+         //cout << Ar_evecs[ i ].transpose() << endl;
       }else{
          for(int j=0;j<i;j++){
             r_evecs[i] -=  (r_evecs[j] * r_evecs[i].transpose() * r_evecs[j] ) ;
          }
          r_evecs[i]=r_evecs[i].normalized();
          Ar_evecs.push_back(Fill_Hrvec(r_evecs[i], mointfile));
+         //cout << "R VEC " << endl;
+         //cout << r_evecs[ i ].transpose() << endl;
+         //cout << "HR VEC " << endl;
+         //cout << Ar_evecs[ i ].transpose() << endl;
       }
    }
    t = clock() - t;
@@ -211,6 +246,10 @@ void Davidson::DavidsonCIS(
 	     }
 	     r_evecs[i]=r_evecs[i].normalized();
 	     Ar_evecs.push_back(Fill_Hrvec(r_evecs[i], mointfile));
+         //cout << "R VEC " << endl;
+         //cout << r_evecs[ i ].transpose() << endl;
+         //cout << "HR VEC " << endl;
+         //cout << Ar_evecs[ i ].transpose() << endl;
          }
       } 
 
@@ -302,7 +341,8 @@ VectorXd Davidson::Fill_Hrvec(VectorXd _cvec, std::string mointfile){
    sigma_vec.resize(cidim);
 
    int psia,psib,psir,psis;
-   int pq1, rs1, pq2, rs2, index1, index2;
+   int pq1, rs1, pq2, rs2, index1, index2, index3;
+   
    double cival;
    int mo_index_in_arr;
    size_t INDEX_TO_BE_FOUND;
@@ -320,111 +360,83 @@ VectorXd Davidson::Fill_Hrvec(VectorXd _cvec, std::string mointfile){
    int old_psir, old_psis;
    old_psir = -1;
    old_psis = -1;
+   int psirp1;
 
-   for(int i=0;i<cidim;i++){
+   int ind_ra, ind_rb, ind_sa, ind_sb;
+   for(int psir = nocc; psir < norb; psir++ ){
+   psirp1 = psir + 1;
+
+   cMOints.gamma_moint_to_vector( 
+      dble_arr, indx_arr, 
+      size_arr,
+      psir, psirp1, 
+      0, norb,
+      0, nocc,
+      0, norb, 
+      -10 
+   );
+   sorter( dble_arr, indx_arr, size_arr );
+
+   for(int psia = 0; psia < nocc; psia++ ){
+      ind_ra = (psir-nocc)*nocc + psia;
       cival=0.0;
-      psia = i - (int)( i/nocc ) * nocc;
-      psir = (int)( i / nocc ) + nocc;
-      cival=(evals.irrep( 0 )(psir,0)-evals.irrep( 0 )(psia,0))*_cvec(i);
+      //psia = i - (int)( i/nocc ) * nocc;
+      //psir = (int)( i / nocc ) + nocc;
+      cival=(evals.irrep( 0 )(psir,0)-evals.irrep( 0 )(psia,0))*_cvec( ind_ra );
 
       pq1 = ( psir * ( psir + 1 ) ) / 2 + psia;
 
       lower_bound1 = 0;
       lower_bound2 = 0;
 
-      if( !full_moint_set ){
-        if( psir != old_psir )
-          read_gamma_mointb_ind_p( mointfile, psir, dble_arr, indx_arr, size_arr, optimize_size_arr );
-        old_psir = psir;
-      }
+      old_psir = psir;
 
-      for(int j=0;j<cidim;j++){
-         psib= j - (int)( j / nocc ) * nocc;
-         psis= (int)( j / nocc ) + nocc;
+      for(int psis = nocc; psis < norb; psis++ ){
 
-         rs1 = ( psis * ( psis + 1 ) ) / 2 + psib;
+      for(int psib = 0; psib < nocc; psib++ ){
+         ind_sb = (psis-nocc)*nocc + psib;
+         ind_sa = (psis-nocc)*nocc + psia;
+         ind_rb = (psir-nocc)*nocc + psib;
 
          // ENTRIES ARE  : eps(r) - eps(a) + 2*(ra|bs) - (rs|ba)
-         //        or... : eps(r) - eps(a) + 2*(ra|sb) - (rs|ba)
 
-         if( pq1 > rs1 ){
-             index1 = ( pq1 * ( pq1 + 1 ) ) / 2 + rs1;
-             pindex1 = psir;
-         }else{
-             index1 = ( rs1 * ( rs1 + 1 ) ) / 2 + pq1;
-             pindex1 = psis;
-         }
-         if( psir > psis ){
-             pq2 = (psir * ( psir + 1 ) ) / 2 + psis;
-             pindex2 = psir;
-         }else{
-             pq2 = (psis * ( psis + 1 ) ) / 2 + psir;
-             pindex2 = psis;
-         }
-         if( psib > psia ){
-             rs2 = (psib * ( psib + 1 ) ) / 2 + psia;
-         }else{
-             rs2 = (psia * ( psia + 1 ) ) / 2 + psib;
-         }
-         if( pq2 > rs2 ){
-             index2 = ( pq2 * ( pq2 + 1 ) ) / 2 + rs2;
-         }else{
-             index2 = ( rs2 * ( rs2 + 1 ) ) / 2 + pq2;
-         }
-         if( full_moint_set ){
-           cival += ( 2. * moints[ index1 ] - 1. * moints[ index2 ] ) * _cvec( j ); 
-         }else{
-
-           if( pindex2 != psir ){
-             if( psis != old_psis )
-               read_gamma_mointb_ind_p( mointfile, psis, dble_arr2, indx_arr2, size_arr2, optimize_size_arr );
-             old_psis = psis;
-           }
-
-           // now we create the first integral 
+         //if( full_moint_set ){
+           //
+           //
+           // Doing coulomb part
+           //
+           //
+           index1 =  get_ijkl( psir, psia, psib, psis );
+           index2 =  get_ijkl( psir, psis, psib, psia );
            moint1 = 0.0;
-           if( pindex1 == psir ){
-             INDEX_TO_BE_FOUND = index1;
-             mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
-             if( mo_index_in_arr >= 0 ){
-               moint1 = dble_arr[ mo_index_in_arr ];
-               lower_bound1 = mo_index_in_arr;
-             }
-           }else{
-             INDEX_TO_BE_FOUND = index1;
-             mo_index_in_arr = binary_search( indx_arr2, INDEX_TO_BE_FOUND, 0, size_arr2-1 );
-             if( mo_index_in_arr >= 0 ){
-               moint1 = dble_arr2[ mo_index_in_arr ];
-               lower_bound1 = mo_index_in_arr;
-             }
+           INDEX_TO_BE_FOUND = index1;
+           mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
+           if( mo_index_in_arr >= 0 ){
+             moint1 = dble_arr[ mo_index_in_arr ];
+             lower_bound1 = mo_index_in_arr;
            }
+           cival += 2. * moint1 * _cvec( ind_sb );
 
-           // now we create the second integral
+           index2 =  get_ijkl( psir, psis, psib, psia );
            moint2 = 0.0;
-           if( pindex2 == psir ){
-             INDEX_TO_BE_FOUND = index2;
-             mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
-             if( mo_index_in_arr >= 0 ){
-               moint2 = dble_arr[ mo_index_in_arr ];
-               lower_bound1 = mo_index_in_arr;
-             }
-           }else{
-             INDEX_TO_BE_FOUND = index2;
-             mo_index_in_arr = binary_search( indx_arr2, INDEX_TO_BE_FOUND, 0, size_arr2-1 );
-             if( mo_index_in_arr >= 0 ){
-               moint2 = dble_arr2[ mo_index_in_arr ];
-               lower_bound1 = mo_index_in_arr;
-             }
+           INDEX_TO_BE_FOUND = index2;
+           mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );
+           if( mo_index_in_arr >= 0 ){
+             moint2 = dble_arr[ mo_index_in_arr ];
+             lower_bound2 = mo_index_in_arr;
            }
-
-
-           cival += ( 2. * moint1 - 1. * moint2 ) * _cvec( j );
-
-           old_pindex1 = pindex1;
-           old_pindex2 = pindex2;
-         }
+           cival -= 1. * moint2 * _cvec( ind_sb );
+           //if( psir == 3 && psia == 0 ){
+           //  printf( "%3d %3d : ADDING (%3d,%3d,%3d,%3d) : %20.16f \n", psir, psia, psir, psia, psib, psis, moint1 );
+           //  printf( "%3d %3d : SUBTRA (%3d,%3d,%3d,%3d) : %20.16f \n", psir, psia, psir, psis, psib, psia, moint2 );
+           //  cout << "CBJ : " << _cvec( ind_sb ) << endl;
+           //}
+         //}else{
+         //}
       }
-   sigma_vec(i) = cival;   
+      }
+   sigma_vec( ind_ra ) = cival;   
+   }
    }
 return sigma_vec;
 }

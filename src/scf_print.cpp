@@ -16,7 +16,7 @@ using namespace Eigen;
 
 void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
     printf( "Matrix ---- %-15s \n", title );
-    int val_per_line = 10;
+    int val_per_line = 6;
     int current_col = 0;
     int current_row = 0;
     int offset = 0;
@@ -28,7 +28,7 @@ void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
           if( i == offset )
             printf( "%-4c", ' ' );
           else
-            printf( "%14d", i );
+            printf( "%20d", i );
         } 
         printf( "\n" );
         fflush( stdout );
@@ -45,7 +45,7 @@ void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
           if( i == offset )
             printf( "%-4d", current_row ); 
           else
-            printf( "%14.10f", in_matr.irrep( which_irrep )( (current_row-1), (which_j) ) );
+            printf( "%20.16f", in_matr.irrep( which_irrep )( (current_row-1), (which_j) ) );
           fflush( stdout );
         }
         current_row++;

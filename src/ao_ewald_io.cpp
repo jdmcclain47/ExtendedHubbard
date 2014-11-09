@@ -17,6 +17,7 @@ bool aoIntegralFactory::read_ewald( UnitCell& UCell, SuperCell& SCell, int tolEw
     int read_in_nao_ucell;
     int read_in_tolEwald;
     vector< double > in_coords;
+    vector< double > in_trans;
     bool failed = false;
     FILE* iFile;
 
@@ -71,6 +72,30 @@ bool aoIntegralFactory::read_ewald( UnitCell& UCell, SuperCell& SCell, int tolEw
       cout << "FAILED : current coords = " << endl;
       for( int i = 0; i < read_in_nao_ucell; ++i ) printf( "%12.8f %12.8f %12.8f \n",
                UCell.coords[ i ]( 0 ),UCell.coords[ i ]( 1 ),UCell.coords[ i ]( 2 ) );
+      fclose( iFile );
+      return false;
+    }
+
+    // 
+    // reading in translation vectors
+    // 
+    in_trans.resize( 9 );
+    fread( &in_trans[ 0 ], sizeof( double ), in_trans.size(), iFile );
+    for( int i = 0; i < 3; ++i ){
+      double coordx = UCell.T( i , 0 );
+      double coordy = UCell.T( i , 1 );
+      double coordz = UCell.T( i , 2 );
+      if( in_trans[ 3 * i + 0 ] != coordx ) failed = true;
+      if( in_trans[ 3 * i + 1 ] != coordy ) failed = true;
+      if( in_trans[ 3 * i + 2 ] != coordz ) failed = true;
+    } 
+    if( failed ){
+      cout << "FAILED : read_in_trans = " << endl;
+      for( int i = 0; i < 3; ++i ) printf( "%12.8f %12.8f %12.8f \n",
+               in_trans[ 3 * i + 0 ],in_trans[ 3 * i + 1 ],in_trans[ 3 * i + 2 ] );
+      cout << "FAILED : current trans = " << endl;
+      for( int i = 0; i < 3; ++i ) printf( "%12.8f %12.8f %12.8f \n",
+               UCell.T( i , 0 ),UCell.T( i , 1 ),UCell.T( i , 2 ) );
       fclose( iFile );
       return false;
     }
@@ -135,6 +160,14 @@ void aoIntegralFactory::write_ewald( UnitCell& UCell, SuperCell& SCell, int tolE
       double coordx = UCell.coords[ i ]( 0 );
       double coordy = UCell.coords[ i ]( 1 );
       double coordz = UCell.coords[ i ]( 2 );
+      fwrite( &coordx, sizeof( double ), 1, oFile );
+      fwrite( &coordy, sizeof( double ), 1, oFile );
+      fwrite( &coordz, sizeof( double ), 1, oFile );
+    }
+    for( int i = 0; i < 3; ++i ){
+      double coordx = UCell.T( i , 0 );
+      double coordy = UCell.T( i , 1 );
+      double coordz = UCell.T( i , 2 );
       fwrite( &coordx, sizeof( double ), 1, oFile );
       fwrite( &coordy, sizeof( double ), 1, oFile );
       fwrite( &coordz, sizeof( double ), 1, oFile );

@@ -104,7 +104,7 @@ void SCF::SCF_Iteration( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory& a
       if( pbc.ret_type() == GAMMA ){
          old_evals.irrep(0) = e_vals.irrep(0);
          // need to create SCell_FockXd; by filling it in with the FockXd's
-         if ( scf_iter > 0 && use_diis && densdif < 0.05 ){
+         if ( scf_iter > 0 && use_diis && densdif < 0.10 ){
             MatrixXd fock_with_diis = MatrixXd::Zero( nmo_scell, nmo_scell ) ;
             DIIS.use_diis( &fock_with_diis, SCell_FockXd.irrep(0), SCell_DensXd.irrep(0) );
             SelfAdjointEigenSolver<MatrixXd> eigensolver( fock_with_diis );
@@ -161,6 +161,22 @@ void SCF::SCF_Iteration( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory& a
          FT_dens_k_to_real( UCell, SCell ); 
          Create_Gamma_MatrixXd( UCell, SCell, DensXd, SCell_DensXd );
       } 
+
+      // This forces the density diagonal to be equal to 1 ...
+      if( enforce_charge_sym ){
+        cout << "Enforcing charge symmetry by setting diagonal elements of Density Matrix to 1..." << endl;
+        double charge_max_diff = 0.0;
+        for( int i = 0; i < nmo_ucell; ++i ){
+          if( fabs( DensXd.irrep( 0 )( i, i ) - 1. ) > charge_max_diff ){
+            charge_max_diff = fabs( DensXd.irrep( 0 )( i, i ) - 1. );
+          }
+          DensXd.irrep( 0 )( i, i ) = 1.;
+        }
+        printf( "   - MAX DIFFERENCE : %24.16e \n", charge_max_diff );
+      }
+      // Enforcing inversion symmetry to get rid of pesky wrapping errors ...
+      Enforce_Inversion_Symmetry( UCell, SCell, aoints, DensXd );
+      Create_Gamma_MatrixXd( UCell, SCell, DensXd, SCell_DensXd );
 
       densdif = 0.0;
       for(int i = 0; i < nirreps; i++){

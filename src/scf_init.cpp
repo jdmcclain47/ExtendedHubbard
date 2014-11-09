@@ -30,6 +30,7 @@ void SCF::setDefaultOptions(){
     Opts.AddOptionBool( "READ_DENSITY", true );
     Opts.AddOptionBool( "READ_MO", true );
     Opts.AddOptionBool( "USE_DIIS", true );
+    Opts.AddOptionBool( "ENF_CHARGE_SYM", false );
     Opts.AddOptionBool( "CONVERGE_PSEUDO1D", false );
     Opts.AddOptionBool( "CONVERGE_PSEUDO2D", false );
     Opts.AddOptionString( "PBC", "GAMMA" );
@@ -44,6 +45,7 @@ void SCF::setDefaultOptions(){
     readin_density = Opts.GetOptionBool( "READ_DENSITY" );
     readin_mo = Opts.GetOptionBool( "READ_MO" );
     use_diis = Opts.GetOptionBool( "USE_DIIS" );
+    enforce_charge_sym = Opts.GetOptionBool( "ENF_CHARGE_SYM" );
     converge_pseudo_1d = Opts.GetOptionBool( "CONVERGE_PSEUDO1D" );
     converge_pseudo_2d = Opts.GetOptionBool( "CONVERGE_PSEUDO2D" );
     pbc( Opts.GetOptionString( "PBC" ) );
@@ -74,6 +76,7 @@ void SCF::Init( UnitCell& UCell, SuperCell& SCell ){
     readin_density = Opts.GetOptionBool( "READ_DENSITY" );
     readin_mo = Opts.GetOptionBool( "READ_MO" );
     use_diis = Opts.GetOptionBool( "USE_DIIS" );
+    enforce_charge_sym = Opts.GetOptionBool( "ENF_CHARGE_SYM" );
     converge_pseudo_1d = Opts.GetOptionBool( "CONVERGE_PSEUDO1D" );
     converge_pseudo_2d = Opts.GetOptionBool( "CONVERGE_PSEUDO2D" );
     pbc( Opts.GetOptionString( "PBC" ) );

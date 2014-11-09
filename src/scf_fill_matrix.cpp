@@ -99,3 +99,20 @@ void SCF::Create_Block_MatrixXd(
      block_matrix.irrep( ir )( i, j ) = gamma_matrix.block( 0, ir*nmo_ucell, nmo_ucell, nmo_ucell )( i, j );
    }
 }
+
+void SCF::Enforce_Inversion_Symmetry(
+   UnitCell& UCell,
+   SuperCell& SCell,
+   aoIntegralFactory& aoints,
+   VMatrixXd& block_matrix
+){
+   int index;
+   int inv_index;
+   for( int ir = 0; ir < nirreps; ++ir ){
+     index = ir;
+     inv_index = aoints.getInvTrans( index );
+     if( index != inv_index ){
+       block_matrix.irrep( inv_index ) = block_matrix.irrep( index ).transpose();
+     }
+   }
+}

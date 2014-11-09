@@ -243,6 +243,8 @@ double gamma_fock_integral_ij(
     const Eigen::MatrixXd& two_body_matr,
     const Eigen::MatrixXd& coulomb_matr,
     const Eigen::MatrixXd& evecsXd,
+    double& xc_contribution,
+    double& coulomb_contribution,
     const int nmo_scell,
     bool new_p_not_used,
     bool new_q_not_used
@@ -266,6 +268,8 @@ double gamma_fock_integral_ij(
     new_p = true;
     new_q = true;
     double jint, xcint;
+    xc_contribution = 0.0;
+    coulomb_contribution = 0.0;
     for( int i = 0; i < nocc; ++i ){
       new_i = true;
       gamma_i = evecsXd.col( i ); 
@@ -275,7 +279,9 @@ double gamma_fock_integral_ij(
       xcint = quarter_transform__gamma_point( gamma_p, gamma_i, gamma_i, gamma_q,
                 gamma_contr1, gamma_contr2, gamma_contr3, two_body_matr, nmo_scell,
                 new_p, new_i, new_q, new_i );
-      two_body_contribution += 2 * jint - xcint;
+      xc_contribution -= xcint;
+      coulomb_contribution += 2. * jint;
+      two_body_contribution += 2. * jint - xcint;
       
       //printf( "+2 CONTRIBUTION (%3d,%3d,%3d,%3d) : %20.16f \n", (p+1), (q+1), (i+1), (i+1), jint );
       //printf( "-1 CONTRIBUTION (%3d,%3d,%3d,%3d) : %20.16f \n", (p+1), (i+1), (q+1), (i+1), xcint );
@@ -303,12 +309,13 @@ double gamma_fock_integral_ij(
       one_body_correction += jint - xcint;
     }
     one_body_correction *= 2.;
+    coulomb_contribution += one_body_correction; 
 
     double outval = one_body_contribution + two_body_contribution + one_body_correction;
     //printf( "FOCK ONE-BODY CONTRIBUTION %20.16f \n", one_body_contribution );
     //printf( "FOCK TWO-BODY CONTRIBUTION %20.16f \n", two_body_contribution );
     //printf( "FOCK ONE-BODY CORRECTION   %20.16f \n", one_body_correction   );
-    printf( "FOCK ELEMENT (%3d, %3d )      %20.16f \n", p, q, outval );
+    //printf( "FOCK ELEMENT (%3d, %3d )      %20.16f \n", p, q, outval );
     return outval;
 }
 
@@ -333,6 +340,11 @@ void check_gamma_fock(
     int nocc = (int)(nmo_scell/2);
     double max_error = 0.0;
     double error = 0.0;
+    double xc_contr, coulomb_contr;
+    double exchange_energy, coulomb_energy;
+
+    exchange_energy = 0.0;
+    coulomb_energy = 0.0;
     
     for( int p = 0; p < nmo_scell; ++p ){
       new_p = true;
@@ -344,8 +356,12 @@ void check_gamma_fock(
         //cout << "Q " << gamma_q << endl;
         //cout << "KERNEL " << two_body_matr << endl;
         fpq = gamma_fock_integral_ij( p, q, gamma_p, gamma_q, gamma_contr_one_body, gamma_contr1, gamma_contr2, \
-                                      gamma_contr3, one_body_matr, two_body_matr, coulomb_matr, evecsXd, nmo_scell , \
+                                      gamma_contr3, one_body_matr, two_body_matr, coulomb_matr, evecsXd, xc_contr, coulomb_contr, nmo_scell , \
                                       new_p, new_q );
+        if( p == q && p < (int)(nmo_scell/2) ){
+          exchange_energy += xc_contr;
+          coulomb_energy += coulomb_contr; 
+        }
         if( p != q ) error = fabs( fpq - 0.0 ); 
         else error = fabs( fpq - evalsXd( p, 0 ) );
 
@@ -362,6 +378,8 @@ void check_gamma_fock(
       }
     }
     printf( "ERROR IN MO FOCK INTEGRALS / BRILLOUINS THEOREM = %20.14e \n", max_error );
+    printf( "EXCHANGE ENERGY FROM MO's = %20.14e \n", exchange_energy );
+    printf( "COULOMB  ENERGY FROM MO's = %20.14e \n", coulomb_energy );
 }
 
 void moIntegralFactory::Init(
