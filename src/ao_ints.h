@@ -54,6 +54,7 @@ class aoIntegralFactory {
     pppkernel pppkern;
     kernel xckern; 
     kernel coulombkern; 
+    kernel corr1kern, corr2kern; 
     Options Opts;
     PPPModel PPP;
 
@@ -105,6 +106,8 @@ class aoIntegralFactory {
  
       double getCoulombInt( int iat, int jat, int which_cell );
       double getXCInt( int iat, int jat, int which_cell );
+      double getCorr1Int( int iat, int jat, int which_cell );
+      double getCorr2Int( int iat, int jat, int which_cell );
       double getSelfInt(){ return ewald_self; };
       double getHopping( int iat, int jat, int which_cell ){ return aoHopMatr[ getPerElement( iat, jat, which_cell ) ]; };
       double getNucNuc(){ return nucnuc; };
@@ -116,6 +119,8 @@ class aoIntegralFactory {
       std::string getCoulombKernelStr(){ return getKernelStr( coulombkern ); };
       void SetPPPKernel( const char* inkern );
       void SetXCKernel( const char* inkern );
+      void SetCorr1Kernel( const char* inkern );
+      void SetCorr2Kernel( const char* inkern );
       void SetCoulombKernel( const char* inkern );
       double getHubbardU( std::string ao1 ){ return PPP.get_hubbard_u( ao1 ); };
       double getOnsiteE( std::string ao1 ){ return PPP.get_hubbard_e( ao1 ); };

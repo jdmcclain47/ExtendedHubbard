@@ -16,7 +16,7 @@ using namespace Eigen;
 
 void SCF::printPartialMatrix( const char* title, VMatrixXd& in_matr ){
     printf( "Matrix ---- %-15s \n", title );
-    int val_per_line = 10;
+    int val_per_line = 6;
     int current_col = 0;
     int current_row = 0;
     int offset = 0;

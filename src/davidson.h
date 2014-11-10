@@ -4,6 +4,7 @@
 #include <string>
 #include "Eigen/Dense"
 #include "common.h"
+#include "mointegrals.h"
 #include "cellinfo.h"
 struct eigenpairs {
    Eigen::VectorXd evals;
@@ -44,14 +45,16 @@ private:
    bool full_moint_set;
    double tol;
    int max_sub;
-   int nocc;
+   int nocc, norb;
    int cidim;
    int _nNeighbors;
+   moIntegralFactory cMOints;
 
 public:
    void Init(
       UnitCell&,
-      SuperCell&
+      SuperCell&,
+      moIntegralFactory&
    );
    void set_evals_and_moints(
       VMatrixXd& evals,

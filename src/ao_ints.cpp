@@ -137,6 +137,8 @@ void aoIntegralFactory::setDefaultOptions(){
 
     Opts.AddOptionString( "XCMETHOD", "WS" );
     Opts.AddOptionString( "COULOMBMETHOD", "EWALD" );
+    Opts.AddOptionString( "CORR1", "WS" );
+    Opts.AddOptionString( "CORR2", "EWALD" );
     Opts.AddOptionString( "PPPKERNEL", "COULOMB" );
     Opts.AddOptionDouble( "PPPKERNEL_DIST", 0.0 );
     Opts.AddOptionBool( "PRINT_MATRICES", true );
@@ -151,6 +153,12 @@ void aoIntegralFactory::setDefaultOptions(){
     tolEwald = Opts.GetOptionInt( "EWALD_TOL" );
     printMatr = Opts.GetOptionBool( "PRINT_MATRICES" );
     readChkpt = Opts.GetOptionBool( "READ_CHECKPOINT" );
+    /* THIS SNIPPET SHOULD NOT BE COPIED AND DEPENDS ON OTHER INITIAL PARAMETERS */
+    Opts.SetOptionString( "CORR1", Opts.GetOptionString( "XCMETHOD" ) );
+    Opts.SetOptionString( "CORR2", Opts.GetOptionString( "XCMETHOD" ) );
+    /* END OF SNIPPET */ 
+    SetCorr1Kernel( Opts.GetOptionString( "CORR1" ) );
+    SetCorr2Kernel( Opts.GetOptionString( "CORR2" ) );
 
     printf( "done!\n" );
 }
@@ -164,14 +172,16 @@ void aoIntegralFactory::Init( UnitCell& UCell, SuperCell& SCell, const char* ao_
     /* now setting member values based on these options */
     SetXCKernel(      Opts.GetOptionString( "XCMETHOD" )      );
     SetCoulombKernel( Opts.GetOptionString( "COULOMBMETHOD" ) );
+    SetCorr1Kernel( Opts.GetOptionString( "CORR1" ) );
+    SetCorr2Kernel( Opts.GetOptionString( "CORR2" ) );
     SetPPPKernel(     Opts.GetOptionString( "PPPKERNEL" )     );
     pppkerneldist =      Opts.GetOptionDouble( "PPPKERNEL_DIST" );
     tolEwald = Opts.GetOptionInt( "EWALD_TOL" );
     printMatr = Opts.GetOptionBool( "PRINT_MATRICES" );
     readChkpt = Opts.GetOptionBool( "READ_CHECKPOINT" );
     /* adding an extra option based on input values */
-    do_xc_ppp_correction      = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( xckern      != WS ) && ( xckern      != NONE );
-    do_coulomb_ppp_correction = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( coulombkern != WS ) && ( coulombkern != NONE );
+    do_xc_ppp_correction      = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( xckern      != NONE );
+    do_coulomb_ppp_correction = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( coulombkern != NONE );
     do_ppp_kernel_correction  = (do_xc_ppp_correction || do_coulomb_ppp_correction ); 
 
 
