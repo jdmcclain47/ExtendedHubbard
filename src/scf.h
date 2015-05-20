@@ -30,6 +30,9 @@ class SCF {
       void write_binary_mo_coeff( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory&, const char* in_file );
       void write_binary_mo_coeff( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory& );
 
+      void write_mo_coeff( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory&, const char* in_file );
+      void write_fock( UnitCell& UCell, SuperCell& SCell, aoIntegralFactory&, const char* in_file );
+
       int get_nocc(){return nocc;};
       int get_nmo_scell(){return nmo_scell;};
       double get_rcut(){ return rcut; };

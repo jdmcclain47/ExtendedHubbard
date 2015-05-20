@@ -39,6 +39,7 @@ int main( int argc, char* argv[] ){
    Davidson            cis;
    moIntegralFactory moints;
 
+   clock_t t;
    
 
    if( taskid == 0 ){
@@ -49,9 +50,28 @@ int main( int argc, char* argv[] ){
     
      scf.Compute_Energy( UCell, SCell, aoints );
 
+     scf.write_fock( UCell, SCell, aoints, "PPPFOCK" );
+     scf.write_mo_coeff( UCell, SCell, aoints, "PPPCOEFF" );
      //aoints.set_non_coulomb_kernel_to_zero();
 
    }
+
+
+   if( taskid == 0 ){
+     moints.Init( UCell, SCell, aoints, scf.get_pbc(), scf.get_evals(), scf.get_gamma_evecs(), scf.get_kpoint_evecs() );
+     t=clock();
+     //if( aoints.get_integral_proc() == false ){
+       moints.write_gamma_moint_to_fcidump( "FCIDUMP_XC", -10 );
+       moints.write_gamma_moint_to_fcidump_coulomb( "FCIDUMP_J", -10 );
+     //}else{
+     //  moints.write_gamma_moint_to_fcidump_new( "FCIDUMP", -10 );
+     //}
+     t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
+   }
+   Davidson_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 1, 10 );
+   //MP2_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 10 );
+   MPI_Finalize();
+   return 1;
 
    if( ( scf.get_pbc() ).type == KPOINT ){
      if( taskid == 0 ){
@@ -66,7 +86,6 @@ int main( int argc, char* argv[] ){
        cis.DavidsonCIS_kpoint( 30000, -6 );
      }
    } else {
-     clock_t t;
      if( taskid == 0 ){
        moints.Init( UCell, SCell, aoints, scf.get_pbc(), scf.get_evals(), scf.get_gamma_evecs(), scf.get_kpoint_evecs() );
        t=clock();
@@ -78,7 +97,7 @@ int main( int argc, char* argv[] ){
 
 
      double mp2energy;
-     cis.Init( UCell, SCell, moints );
+     //cis.Init( UCell, SCell, moints );
 
      //
      //
@@ -100,11 +119,6 @@ int main( int argc, char* argv[] ){
      //  cis.DavidsonCIS( 3000, 4, 10, mointfile );
      //}
      //cis.CheckerCIS();
-//Davidson_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 4, 10 );
-MP2_Gamma_MPI( UCell, SCell, aoints, scf.get_gamma_evecs(), scf.get_evals(), 10 );
-MPI_Finalize();
-return;
-
      //
      //
      // for index p gamma mo integrals 
@@ -135,11 +149,11 @@ return;
      // making FCIDUMP file for use with ACES3
      //
      //
-     if( taskid == 0 ){
-       t=clock();
-       moints.write_gamma_moint_to_fcidump_binary( "FCIDUMP_BINARY", -10 );
-       t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
-     }
+     //if( taskid == 0 ){
+     //  t=clock();
+     //  moints.write_gamma_moint_to_fcidump_binary( "FCIDUMP_BINARY", -10 );
+     //  t=clock()-t; std::cout << "MOINTS NEW TIME " << (double)t/CLOCKS_PER_SEC << std::endl;
+     //}
    }
 
    MPI_Finalize();

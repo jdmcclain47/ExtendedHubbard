@@ -23,6 +23,42 @@ void SCF::write_binary_mo_coeff(
    write_binary_mo_coeff( UCell, SCell, aoints, ".MOCOEFF" );
 }
 
+void SCF::write_fock(
+   UnitCell& UCell, 
+   SuperCell& SCell, 
+   aoIntegralFactory& aoints,
+   const char* fock_file
+){
+   int ip1;
+   FILE* oFile;
+   oFile = fopen( fock_file, "w" );
+   for( int i = 0; i < SCell.nao; ++i ){
+     ip1 = i + 1;
+     fprintf( oFile, "%3d %3d %20.16f \n", ip1, ip1, e_vals.irrep( 0 )( i, 0 ) );
+   }
+   fclose( oFile );
+}
+
+
+void SCF::write_mo_coeff(
+   UnitCell& UCell, 
+   SuperCell& SCell, 
+   aoIntegralFactory& aoints,
+   const char* mocoeff_file
+){
+   FILE* oFile;
+   double val;
+   oFile = fopen( mocoeff_file, "w" );
+   for( int i = 0; i < SCell.nao; ++i ){
+   for( int j = 0; j < SCell.nao; ++j ){
+     val = e_vecsXd.irrep( 0 )( i, j );
+     fprintf( oFile, "%20.16f ", val );
+   }
+   fprintf( oFile, "\n" );
+   }
+   fclose( oFile );
+}
+
 void SCF::write_binary_mo_coeff( 
    UnitCell& UCell, 
    SuperCell& SCell, 

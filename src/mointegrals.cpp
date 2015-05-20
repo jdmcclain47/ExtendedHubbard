@@ -44,6 +44,25 @@ std::vector< double > moIntegralFactory::read_gamma_moints_from_file( const char
     return outvec; 
 }
 
+double moIntegralFactory::make_2eint_pqrs( 
+    const Eigen::MatrixXd& kernel_matr,
+    const Eigen::MatrixXd& evecsXd,
+    int p, int q, int r, int s
+){
+    double val;
+    Eigen::VectorXd v1, v2, v3;
+    v1.resize( nmo_scell );
+    v2.resize( nmo_scell );
+    v1 = evecsXd.col( p );
+    v2 = evecsXd.col( q );
+    for( int i = 0; i < nmo_scell; ++i ) v1( i ) = v1( i ) * v2( i );
+    v2 = evecsXd.col( r );
+    v3 = evecsXd.col( s );
+    for( int i = 0; i < nmo_scell; ++i ) v2( i ) = v2( i ) * v3( i );
+    val = v1.transpose() * kernel_matr * v2;
+    return val;
+}
+
 void moIntegralFactory::write_gamma_moint_to_file( const char* ofilename ){
     int ij_index, kl_index, mo_index;
     double val;
@@ -91,6 +110,39 @@ void moIntegralFactory::write_gamma_moint_to_file( const char* ofilename ){
     outfile.close(); 
 }
 
+double quarter_gamma_transform_new(
+    const MatrixXd& evecsXd, const Eigen::MatrixXd& kernel_matr, const int& imo, const int& jmo, const int& kmo, const int& lmo,
+    const bool& imo_is_new, const bool& jmo_is_new, const bool& kmo_is_new, const bool& lmo_is_new
+){
+    int nmo_scell = evecsXd.cols();
+    static Eigen::VectorXd gamma_i     = Eigen::VectorXd::Zero(nmo_scell);
+    static Eigen::VectorXd gamma_j     = Eigen::VectorXd::Zero(nmo_scell);
+    static Eigen::VectorXd gamma_k     = Eigen::VectorXd::Zero(nmo_scell);
+    static Eigen::VectorXd gamma_l     = Eigen::VectorXd::Zero(nmo_scell);
+    static Eigen::VectorXd gamma_contr = Eigen::VectorXd::Zero(nmo_scell);
+    double val = 0.0;
+    if( imo_is_new || jmo_is_new ){
+      for( int i = 0; i < nmo_scell; ++i ) gamma_j( i ) = evecsXd( i, imo ) * evecsXd( i, jmo );
+      //cout << "i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_j << endl; 
+      gamma_contr = kernel_matr * gamma_j;
+      //cout << "KERNEL i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_contr << endl; 
+      for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd( i, kmo );
+    }
+    if( kmo_is_new ){
+      for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd( i, kmo );
+    }
+    for( int i = 0; i < nmo_scell; ++i ) val += gamma_k( i ) * evecsXd( i, lmo );
+    //if ( imo == 8 && kmo == 8 && jmo == 0 ) {
+    //  cout << gamma_contr << endl;
+    //  cout << " " << endl;
+    //  cout << gamma_k << endl;
+    //  cout << " " << endl;
+    //}
+    return val;
+}
+
 void gamma_moint_to_vector( 
     std::vector< double >& dble_arr,
     std::vector< size_t >& indx_arr,
@@ -106,7 +158,7 @@ void gamma_moint_to_vector(
 ){
     int ij_index, kl_index;
     size_t mo_index;
-    double val;
+    double val, val2;
     double dtol = pow( 10., 1. * itol );
     
     size_t in_arr_size = indx_arr.size();
@@ -132,13 +184,15 @@ void gamma_moint_to_vector(
       evgamma_k = evecsXd.col( k );
       create_third_cont = true;
       for( int l = sstart; l < send; ++l ){
-        evgamma_l = evecsXd.col( l );
-        create_fourth_cont = true;
+          evgamma_l = evecsXd.col( l );
+          create_fourth_cont = true;
           mo_index = get_ijkl_index( i, j, k, l ); 
           //val = quarter_gamma_transform( i, j, k, l, create_first_cont, create_second_cont, create_third_cont, create_fourth_cont );
           val = quarter_transform__gamma_point( evgamma_i, evgamma_j, evgamma_k, evgamma_l, cont1, cont2, cont3, kernel_matr, \
                                                 nmo_scell, create_first_cont, create_second_cont, create_third_cont, create_fourth_cont );
-          //cout << "CREATING " << mo_index << " VAL : " << val << endl;
+          //val = quarter_gamma_transform_new( evecsXd, kernel_matr, i, j, k, l, create_first_cont, create_second_cont, create_third_cont, create_fourth_cont ); 
+	  //printf ("%3d %3d %3d %3d   |   %20.16f  \n", i, j, k, l, val );
+          //cout << "CREATING " << i << "," << j << "," << k << "," << l << " VAL : " << val << endl;
 
           if( fabs( val ) > dtol ){
             if( counter < in_arr_size ){
@@ -155,7 +209,7 @@ void gamma_moint_to_vector(
           create_second_cont = false;
           create_third_cont = false;
           create_fourth_cont = false;
-        }
+      }
       }
     }
     }
@@ -187,7 +241,7 @@ void moIntegralFactory::gamma_moint_to_vector(
       create_second_cont = true;
       for( int k = rstart; k < rend; ++k ){
       create_third_cont = true;
-      for( int l = sstart; l < send; ++l ){
+        for( int l = sstart; l < send; ++l ){
         create_fourth_cont = true;
           mo_index = get_ijkl_index( i, j, k, l ); 
           val = quarter_gamma_transform( i, j, k, l, create_first_cont, create_second_cont, create_third_cont, create_fourth_cont );
@@ -382,6 +436,7 @@ void check_gamma_fock(
     printf( "COULOMB  ENERGY FROM MO's = %20.14e \n", coulomb_energy );
 }
 
+
 void moIntegralFactory::Init(
     UnitCell& UCell,
     SuperCell& SCell,
@@ -457,7 +512,7 @@ void moIntegralFactory::Init(
     Eigen::MatrixXd gamma_evalsXd;
     gamma_evecsXd = inevecsXd.irrep( 0 );
     gamma_evalsXd = inevals.irrep( 0 );
-    check_gamma_fock( one_body_matr, kernel_matr, coulomb_matr, gamma_evecsXd, gamma_evalsXd, nmo_scell );
+    //check_gamma_fock( one_body_matr, kernel_matr, coulomb_matr, gamma_evecsXd, gamma_evalsXd, nmo_scell );
 
     //Eigen::VectorXd one_body_rhs, one_body_lhs, one_body_tvec;
     //one_body_rhs.resize( nmo_scell );
@@ -488,6 +543,14 @@ void moIntegralFactory::Init(
       //setup_cos_sin( SCell ); 
     }
 
+    double val_coulomb, val_xc, val_diff;
+    val_coulomb = make_2eint_pqrs( coulomb_matr, evecsXd.irrep( 0 ), 0, 0, 0, 0 );
+    printf( "VAL2 COULOMB : %20.16f \n", val_coulomb );
+    val_xc = make_2eint_pqrs( kernel_matr, evecsXd.irrep( 0 ), 0, 0, 0, 0 );
+    printf( "VAL2 XC      : %20.16f \n", val_xc );
+    val_diff = fabs( val_coulomb - val_xc );
+    printf( "DIFF         : %20.16f \n", val_diff );
+
     printf( "SETUP COMPLETE! \n" );
 }
 
@@ -514,7 +577,11 @@ double moIntegralFactory::quarter_gamma_transform(
     double val = 0.0;
     if( imo_is_new ){
       for( int i = 0; i < nmo_scell; ++i ) gamma_j( i ) = evecsXd.irrep( 0 )( i, imo ) * evecsXd.irrep( 0 )( i, jmo );
+      //cout << "i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_j << endl; 
       gamma_contr = kernel_matr * gamma_j;
+      //cout << "KERNEL i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_contr << endl; 
       for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd.irrep( 0 )( i, kmo );
     }
     if( jmo_is_new ){
@@ -529,6 +596,31 @@ double moIntegralFactory::quarter_gamma_transform(
     return val;
 }
 
+double moIntegralFactory::quarter_gamma_transform_coulomb(
+    const int& imo, const int& jmo, const int& kmo, const int& lmo,
+    const bool& imo_is_new, const bool& jmo_is_new, const bool& kmo_is_new, const bool& lmo_is_new
+){
+    double val = 0.0;
+    if( imo_is_new ){
+      for( int i = 0; i < nmo_scell; ++i ) gamma_j( i ) = evecsXd.irrep( 0 )( i, imo ) * evecsXd.irrep( 0 )( i, jmo );
+      //cout << "i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_j << endl; 
+      gamma_contr = coulomb_matr * gamma_j;
+      //cout << "KERNEL i dot j " << imo << ", " << jmo << endl;
+      //cout << gamma_contr << endl; 
+      for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd.irrep( 0 )( i, kmo );
+    }
+    if( jmo_is_new ){
+      for( int i = 0; i < nmo_scell; ++i ) gamma_j( i ) = evecsXd.irrep( 0 )( i, imo ) * evecsXd.irrep( 0 )( i, jmo );
+      gamma_contr = coulomb_matr * gamma_j;
+      for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd.irrep( 0 )( i, kmo );
+    }
+    if( kmo_is_new ){
+      for( int i = 0; i < nmo_scell; ++i ) gamma_k( i ) = gamma_contr( i ) * evecsXd.irrep( 0 )( i, kmo );
+    }
+    for( int i = 0; i < nmo_scell; ++i ) val += gamma_k( i ) * evecsXd.irrep( 0 )( i, lmo );
+    return val;
+}
 
 double quarter_transform__gamma_point(
     const Eigen::VectorXd& gamma_i, 

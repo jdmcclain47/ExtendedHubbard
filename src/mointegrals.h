@@ -35,6 +35,10 @@ class moIntegralFactory {
       const int& imo, const int& jmo, const int& kmo, const int& lmo, 
       const bool& create_new_i, const bool& create_new_j, const bool& create_new_k, const bool& create_new_l
     ); 
+    double quarter_gamma_transform_coulomb( 
+      const int& imo, const int& jmo, const int& kmo, const int& lmo, 
+      const bool& create_new_i, const bool& create_new_j, const bool& create_new_k, const bool& create_new_l
+    ); 
 
     public :
       int get_nmo_scell(){ return nmo_scell; };
@@ -56,8 +60,15 @@ class moIntegralFactory {
       void check_gamma_exchange_energy( std::vector< double >& gamma_ints, const double& ref_energy );
       void gamma_moint_to_vector( std::vector< double >& dble_arr, std::vector< size_t >& indx_arr, size_t& arr_size, 
                                   int pstart, int pend, int qstart, int qend, int rstart, int rend, int tstart, int tend, int itol );
+      double make_2eint_pqrs( 
+          const Eigen::MatrixXd& kernel_matr,
+          const Eigen::MatrixXd& evecsXd,
+          int p, int q, int r, int s
+      );
       void write_gamma_moint_to_file( const char* ofilename );
       void write_gamma_moint_to_fcidump( const char* ofilename, int tol );
+      void write_gamma_moint_to_fcidump_coulomb( const char* ofilename, int tol );
+      void write_gamma_moint_to_fcidump_new( const char* ofilename, int tol );
       void write_gamma_moint_to_fcidump_binary( const char* ofilename, int tol );
       void write_gamma_mointb_ind_p( 
           std::string ofilename,

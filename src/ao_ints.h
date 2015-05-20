@@ -37,9 +37,9 @@ class aoIntegralFactory {
     int naoUnit_sqp1;
     int nTrans;
     int tolEwald;
-    bool do_ppp_kernel_correction;
+    bool do_ppp_kernel_correction, use_new_ints;
     bool do_xc_ppp_correction, do_coulomb_ppp_correction;
-    bool printMatr, readChkpt;
+    bool printMatr, readChkpt, printMatrToFile;
     double pppkerneldist;
     double ewald_self;
     double nucnuc;
@@ -101,6 +101,9 @@ class aoIntegralFactory {
       void Init( UnitCell& UCell, SuperCell& SCell, const char* ao_options_filename, const char* ppp_options_filename );
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title );
       void printPerSuperMatrix( SuperCell& SCell, std::vector< double >& inmatr, const char* title, int width, int prec );
+      void printCorr1ToFile( SuperCell& SCell, const char* title );
+      void printCorr2ToFile( SuperCell& SCell, const char* title );
+      bool get_integral_proc(){ return use_new_ints; };
       int getInvTrans( int which_cell );
       void set_non_coulomb_kernel_to_zero(){ for( int i = 0; i < aoNonCoulombMatr.size(); ++i ){ aoNonCoulombMatr[ i ] = 0.0;} };
  

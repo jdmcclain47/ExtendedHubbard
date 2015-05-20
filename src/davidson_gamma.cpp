@@ -407,7 +407,6 @@ VectorXd Davidson::Fill_Hrvec(VectorXd _cvec, std::string mointfile){
            //
            //
            index1 =  get_ijkl( psir, psia, psib, psis );
-           index2 =  get_ijkl( psir, psis, psib, psia );
            moint1 = 0.0;
            INDEX_TO_BE_FOUND = index1;
            mo_index_in_arr = binary_search( indx_arr, INDEX_TO_BE_FOUND, 0, size_arr-1 );

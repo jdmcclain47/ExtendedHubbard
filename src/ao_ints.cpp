@@ -131,6 +131,68 @@ void aoIntegralFactory::printPerSuperMatrix(
     }
 }
 
+void aoIntegralFactory::printCorr1ToFile( 
+    SuperCell& SCell, 
+    const char* filename
+){
+    FILE * oFile;
+    oFile = fopen( filename, "w" );
+
+    int icount = 0;
+    int jcount = 0;
+    bool found;
+    double val;
+
+    for( int itrans = 0; itrans < nTrans; ++itrans, icount++ ){
+    for( int i = 0; i < naoUnitCell; ++i ){
+      jcount = 0;
+      for( int jtrans = 0; jtrans < nTrans; ++jtrans, jcount++ ){
+      for( int j = 0; j < naoUnitCell; ++j ){
+        Eigen::Vector3i tvec = SCell.reduced_t[ jtrans ] - SCell.reduced_t[ itrans ];
+        int index = SCell.get_supercell_index( tvec( 0 ), tvec( 1 ), tvec( 2 ), &found );
+        val = getCorr1Int( i, j, index );
+        if( i == j && itrans == jtrans ) val += getHubbardU( SCell.ElementStr[ i ] );
+        fprintf( oFile, "%20.16f ", val );
+      }
+      }
+      fprintf( oFile, "\n");
+    }
+    }
+    fclose( oFile );
+}
+
+void aoIntegralFactory::printCorr2ToFile( 
+    SuperCell& SCell, 
+    const char* filename
+){
+    FILE * oFile;
+    oFile = fopen( filename, "w" );
+
+    int icount = 0;
+    int jcount = 0;
+    bool found;
+    double val;
+
+    for( int itrans = 0; itrans < nTrans; ++itrans, icount++ ){
+    for( int i = 0; i < naoUnitCell; ++i ){
+      jcount = 0;
+      for( int jtrans = 0; jtrans < nTrans; ++jtrans, jcount++ ){
+      for( int j = 0; j < naoUnitCell; ++j ){
+        Eigen::Vector3i tvec = SCell.reduced_t[ jtrans ] - SCell.reduced_t[ itrans ];
+        int index = SCell.get_supercell_index( tvec( 0 ), tvec( 1 ), tvec( 2 ), &found );
+        val = getCorr2Int( i, j, index );
+        if( i == j && itrans == jtrans ) val += getHubbardU( SCell.ElementStr[ i ] );
+        fprintf( oFile, "%20.16f ", val );
+      }
+      }
+      fprintf( oFile, "\n");
+    }
+    }
+    fclose( oFile );
+}
+
+
+
 void aoIntegralFactory::setDefaultOptions(){
 
     printf( "Setting default options..." );
@@ -142,7 +204,9 @@ void aoIntegralFactory::setDefaultOptions(){
     Opts.AddOptionString( "PPPKERNEL", "COULOMB" );
     Opts.AddOptionDouble( "PPPKERNEL_DIST", 0.0 );
     Opts.AddOptionBool( "PRINT_MATRICES", true );
+    Opts.AddOptionBool( "PRINT_MATRICES_TO_FILE", true );
     Opts.AddOptionBool( "READ_CHECKPOINT", true );
+    Opts.AddOptionBool( "NEW_2E_INTS", false );
     Opts.AddOptionInt( "EWALD_TOL", -5 );
 
     /* the following should be copied after we read in the values from the option file */
@@ -152,8 +216,10 @@ void aoIntegralFactory::setDefaultOptions(){
     pppkerneldist =      Opts.GetOptionDouble( "PPPKERNEL_DIST" );
     tolEwald = Opts.GetOptionInt( "EWALD_TOL" );
     printMatr = Opts.GetOptionBool( "PRINT_MATRICES" );
+    printMatrToFile = Opts.GetOptionBool( "PRINT_MATRICES_TO_FILE" );
     readChkpt = Opts.GetOptionBool( "READ_CHECKPOINT" );
-    /* THIS SNIPPET SHOULD NOT BE COPIED AND DEPENDS ON OTHER INITIAL PARAMETERS */
+    use_new_ints = Opts.GetOptionBool( "NEW_2E_INTS" );
+    /* THIS SNIPPET SHOULD BE COPIED AND DEPENDS ON OTHER INITIAL PARAMETERS */
     Opts.SetOptionString( "CORR1", Opts.GetOptionString( "XCMETHOD" ) );
     Opts.SetOptionString( "CORR2", Opts.GetOptionString( "XCMETHOD" ) );
     /* END OF SNIPPET */ 
@@ -178,7 +244,9 @@ void aoIntegralFactory::Init( UnitCell& UCell, SuperCell& SCell, const char* ao_
     pppkerneldist =      Opts.GetOptionDouble( "PPPKERNEL_DIST" );
     tolEwald = Opts.GetOptionInt( "EWALD_TOL" );
     printMatr = Opts.GetOptionBool( "PRINT_MATRICES" );
+    printMatrToFile = Opts.GetOptionBool( "PRINT_MATRICES_TO_FILE" );
     readChkpt = Opts.GetOptionBool( "READ_CHECKPOINT" );
+    use_new_ints = Opts.GetOptionBool( "NEW_2E_INTS" );
     /* adding an extra option based on input values */
     do_xc_ppp_correction      = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( xckern      != NONE );
     do_coulomb_ppp_correction = ( pppkerneldist > 0.0 ) && ( pppkern != COULOMB ) && ( coulombkern != NONE );
@@ -249,5 +317,9 @@ void aoIntegralFactory::Init( UnitCell& UCell, SuperCell& SCell, const char* ao_
       printPerSuperMatrix( SCell, aoCutMatrWS, "WS CUT-OFF MATRIX", 20, 16 );
       if( do_ppp_kernel_correction )
         printPerSuperMatrix( SCell, aoNonCoulombMatr, "PPP NON-COULOMB CORRECTION" );
+    }
+    if( printMatrToFile ){
+      printCorr1ToFile( SCell, "PPPCORR1" );
+      printCorr2ToFile( SCell, "PPPCORR2" );
     }
 }

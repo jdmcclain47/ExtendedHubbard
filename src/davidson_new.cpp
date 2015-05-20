@@ -186,6 +186,7 @@ void create_hrvec(
       //gamma_moint_to_vector( dble_arr2, indx_arr2, corr2matr, evecsXd, norb,
       //   arr_size2, nocc, norb, nocc, norb, 0, nocc, 0, nocc, -10 ); 
       sorter( dble_arr2, indx_arr2, arr_size2 );
+      
       for( psii = 0; psii < nocc; ++psii ){
       ia_index = ( psia - nocc ) * nocc + psii;
       t_arr[ psii ] = ( evals[ psia ] - evals[ psii ] ) * rvec( ia_index );
@@ -196,8 +197,10 @@ void create_hrvec(
         moint1 = get_moint( dble_arr1, indx_arr1, arr_size1, psia, psii, psij, psib );
         moint2 = get_moint( dble_arr2, indx_arr2, arr_size2, psia, psib, psij, psii );
         t_arr[ psii ] += ( 2. * moint1 - moint2 ) * rvec( jb_index ); 
-        //printf( "(%3d %3d | %3d %3d ) = %20.16f \n", psia, psii, psij, psib, moint1 );
-        //printf( "(%3d %3d | %3d %3d ) = %20.16f \n", psia, psib, psij, psii, moint2 );
+        //if (psii==0 && psia==nocc) {
+        //  printf( "1 (%3d %3d | %3d %3d ) = %20.16f \n", psia, psii, psij, psib, moint1 );
+        //  printf( "2 (%3d %3d | %3d %3d ) = %20.16f \n", psia, psib, psij, psii, moint2 );
+        //}
       }
       }
       }
@@ -303,7 +306,7 @@ void create_hdiag(
       //
       //
       psia = which_work + nocc;
-      gamma_moint_to_vector( dble_arr1, indx_arr1, corr1matr, evecsXd, norb,
+      gamma_moint_to_vector( dble_arr1, indx_arr1, corr2matr, evecsXd, norb,
          arr_size1, psia, (psia+1), 0, nocc, psia, (psia+1), 0, nocc, -10 ); 
       sorter( dble_arr1, indx_arr1, arr_size1 );
       gamma_moint_to_vector( dble_arr2, indx_arr2, corr2matr, evecsXd, norb,
@@ -352,6 +355,7 @@ void set_up_globals(
     int numtasks, taskid;
     MPI_Comm_size( MPI_COMM_WORLD, &numtasks );
     MPI_Comm_rank( MPI_COMM_WORLD, &taskid );
+    cout << "TASK " << taskid << " STARTING GLOBAL VARIABLE CREATION..." << endl;
     if( !is_initialized ){
       corr1matr.resize( norb, norb );
       corr2matr.resize( norb, norb );
@@ -366,6 +370,7 @@ void set_up_globals(
       MPI_Bcast( &corr2matr(0,0), norb*norb, MPI_DOUBLE, 0, MPI_COMM_WORLD );
       MPI_Bcast( &evecsXd(0,0), norb*norb, MPI_DOUBLE, 0, MPI_COMM_WORLD );
       MPI_Bcast( &evals[0], norb, MPI_DOUBLE, 0, MPI_COMM_WORLD );
+      is_initialized = true;
     }
 }
 
@@ -388,6 +393,7 @@ void Davidson_Gamma_MPI(
   int numtasks, taskid;
   MPI_Comm_size( MPI_COMM_WORLD, &numtasks );
   MPI_Comm_rank( MPI_COMM_WORLD, &taskid );
+  cout << "TASK " << taskid << " STARTING DAVIDSON...." << endl;
   assert( numtasks > 1 && "DAVIDSON_GAMMA_MPI REQUIRES MORE THAN ONE PROC!" );
   int nocc = (int)(SCell.nao/2);
   int cidim = nocc * nocc;
@@ -432,10 +438,8 @@ void Davidson_Gamma_MPI(
    
    // Making the diagonal Matrix
    MPI_Barrier( MPI_COMM_WORLD );
-   std::cout << "CREATING DIAGONAL MATRIX..." << std::endl;
    Hdiag.resize(cidim);
    create_hdiag( Hdiag, nocc, norb );
-   std::cout << "DONE CREATING DIAGONAL MATRIX..." << std::endl;
 
    int old_size, new_size, isconverged, error, nconverged;
    int step, max_step, n_added_states;
@@ -452,7 +456,7 @@ void Davidson_Gamma_MPI(
    old_size = 0;
    new_size = 1; 
 
-   max_step = 400;
+   max_step = 200;
    isconverged = 0;
    error = 0;
    step = 0;
@@ -460,7 +464,7 @@ void Davidson_Gamma_MPI(
    while( (!isconverged) && (!error) && step < max_step ){
      for( int i = old_size; i < new_size; ++i ){
        if( step == 0 )
-         tempvec = VectorXd::Random( cidim );
+         tempvec = VectorXd::Ones( cidim );
        else
          tempvec = corrvec;
        tempvec = tempvec.normalized();
@@ -663,22 +667,25 @@ void MP2_Gamma_MPI(
       //
       psia = which_work + nocc;
       gamma_moint_to_vector( dble_arr1, indx_arr1, corr1matr, evecsXd, norb,
-         arr_size1, psia, (psia+1), 0, nocc, 0, nocc, nocc, (psia+1), -10 ); 
+         arr_size1, psia, (psia+1), 0, nocc, 0, nocc, nocc, norb, -10 ); 
+         //arr_size1, psia, (psia+1), 0, nocc, 0, nocc, nocc, (psia+1), -10 ); 
       sorter( dble_arr1, indx_arr1, arr_size1 );
       gamma_moint_to_vector( dble_arr2, indx_arr2, corr2matr, evecsXd, norb,
-         arr_size2, psia, (psia+1), 0, nocc, 0, nocc, nocc, (psia+1), -10 ); 
+         arr_size2, psia, (psia+1), 0, nocc, 0, nocc, nocc, norb, -10 ); 
+         //arr_size2, psia, (psia+1), 0, nocc, 0, nocc, nocc, (psia+1), -10 ); 
       sorter( dble_arr2, indx_arr2, arr_size2 );
       temp_sum = 0.0;
       for( psii = 0; psii < nocc; ++psii  ){
       for( psij = 0; psij < nocc; ++psij ){
-      for( psib = nocc; psib <= psia; ++psib ){ 
+      //for( psib = nocc; psib <= psia; ++psib ){ 
+      for( psib = nocc; psib < norb; ++psib ){ 
           denom = evals[ psii ] + evals[ psij ] - evals[ psia ] - evals[ psib ];
           moint1 = get_moint( dble_arr1, indx_arr1, arr_size1, psii, psia, psij, psib );
           moint2 = get_moint( dble_arr2, indx_arr2, arr_size2, psij, psia, psii, psib );
-          if( psia == psib )
+          //if( psia == psib )
             temp_sum += ( moint1 * ( 2. * moint1 - moint2 ) ) / denom;
-          else
-            temp_sum += 2. * ( moint1 * ( 2. * moint1 - moint2 ) ) / denom;
+          //else
+          //  temp_sum += 2. * ( moint1 * ( 2. * moint1 - moint2 ) ) / denom;
           //cout << "FOR PSIA, PSII : " << psia << ", " << psii << endl;
           //printf( "(%3d %3d | %3d %3d ) = %20.16f \n", psia, psii, psii, psia, moint1 );
           //printf( "(%3d %3d | %3d %3d ) = %20.16f \n", psia, psia, psii, psii, moint2 );
